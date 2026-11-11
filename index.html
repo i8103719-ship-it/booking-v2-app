@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#101014">
+    <title>Atelier — Онлайн-запись</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --bg: var(--tg-theme-bg-color, #101014);
+            --surface: var(--tg-theme-secondary-bg-color, #19191f);
+            --text: var(--tg-theme-text-color, #f5f2ed);
+            --hint: var(--tg-theme-hint-color, #92929d);
+            --accent: #c5a477;
+            --accent-light: #dfc49d;
+            --border: rgba(255,255,255,0.09);
+            --danger: #e47e7e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-height: 100vh;
+            padding: 0 20px 35px;
+        }
+
+        button, input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            padding-top: 30px;
+        }
+
+        .header {
+            padding: 15px 0 30px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .brand {
+            color: var(--accent);
+            font-size: 12px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-family: Georgia, serif;
+            font-size: 34px;
+            font-weight: 400;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            color: var(--hint);
+            font-size: 14px;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .section-title {
+            font-family: Georgia, serif;
+            font-size: 23px;
+            font-weight: 400;
+            margin-bottom: 18px;
+        }
+
+        .services {
+            display: grid;
+            gap: 13px;
+        }
+
+        .service-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: border-color .2s, transform .2s;
+        }
+
+        .service-card:active {
+            transform: scale(.98);
+        }
+
+        .service-card:hover {
+            border-color: var(--accent);
+        }
+
+        .service-info h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .service-info p {
+            color: var(--hint);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .price {
+            color: var(--accent-light);
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .select-btn {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 9px;
+            padding: 10px 15px;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: .2s;
+        }
+
+        .select-btn:active,
+        .select-btn:hover {
+            background: var(--accent);
+            color: #17130e;
+        }
+
+        .screen {
+            display: none;
+            animation: appear .35s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            background: transparent;
+            border: none;
+            color: var(--hint);
+            font-size: 14px;
+            margin-bottom: 25px;
+            padding: 8px 0;
+        }
+
+        .back-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .selected-service {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 17px;
+            margin-bottom: 28px;
+        }
+
+        .selected-service small {
+            color: var(--hint);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .selected-service h3 {
+            margin-top: 8px;
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .selected-service .price {
+            margin-top: 6px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 13px;
+            font-weight: 500;
+        }
+
+        input[type="date"] {
+            width: 100%;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            outline: none;
+            font-size: 15px;
+            margin-bottom: 28px;
+            color-scheme: dark;
+        }
+
+        input[type="date"]:focus {
+            border-color: var(--accent);
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .time-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            padding: 15px 5px;
+            font-size: 14px;
+            transition: .2s;
+        }
+
+        .time-btn.selected {
+            background: var(--accent);
+            color: #17130e;
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .time-btn:disabled {
+            opacity: .3;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .book-btn {
+            width: 100%;
+            padding: 17px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent);
+            color: #17130e;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: .3px;
+            transition: .2s;
+        }
+
+        .book-btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        .book-btn:not(:disabled):active {
+            transform: scale(.98);
+        }
+
+        .notice {
+            text-align: center;
+            color: var(--hint);
+            font-size: 12px;
+            line-height: 1.6;
+            margin-top: 17px;
+        }
+
+        .success {
+            text-align: center;
+            padding: 65px 10px;
+        }
+
+        .success-icon {
+            width: 65px;
+            height: 65px;
+            border: 1px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 25px;
+            color: var(--accent);
+            font-size: 28px;
+        }
+
+        .success h2 {
+            font-family: Georgia, serif;
+            font-size: 29px;
+            font-weight: 400;
+            margin-bottom: 12px;
+        }
+
+        .success p {
+            color: var(--hint);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--hint);
+            font-size: 11px;
+            letter-spacing: 1px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 360px) {
+            .service-card {
+                padding: 15px;
+            }
+
+            .select-btn {
+                padding: 9px 11px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="header">
+        <div class="brand">ATELIER BEAUTY</div>
+        <h1>Время для<br>себя.</h1>
+        <p class="subtitle">
+            Профессиональный уход и внимание к каждой детали.
+            Выберите услугу и удобное время.
+        </p>
+    </header>
+
+    <!-- Экран услуг -->
+    <section id="servicesScreen" class="screen active">
+
+        <h2 class="section-title">Наши услуги</h2>
+
+        <div class="services" id="servicesList"></div>
+
+    </section>
+
+    <!-- Экран записи -->
+    <section id="bookingScreen" class="screen">
+
+        <button class="back-btn" onclick="goBack()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linecap="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Назад к услугам
+        </button>
+
+        <h2 class="section-title">Выберите время</h2>
+
+        <div class="selected-service">
+            <small>Выбранная услуга</small>
+            <h3 id="selectedServiceName"></h3>
+            <div class="price" id="selectedServicePrice"></div>
+        </div>
+
+        <label class="field-label" for="bookingDate">
+            Выберите дату
+        </label>
+
+        <input type="date" id="bookingDate">
+
+        <label class="field-label">
+            Доступное время
+        </label>
+
+        <div class="time-grid" id="timeGrid"></div>
+
+        <button class="book-btn" id="bookBtn" disabled
+                onclick="makeBooking()">
+            Записаться
+        </button>
+
+        <p class="notice">
+            После отправки заявки администратор свяжется
+            с вами для подтверждения записи.
+        </p>
+
+    </section>
+
+    <!-- Экран успеха -->
+    <section id="successScreen" class="screen">
+
+        <div class="success">
+            <div class="success-icon">
+                <svg width="30" height="30" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <path d="M5 12l5 5L20 7"/>
+                </svg>
+            </div>
+
+            <h2>Заявка отправлена</h2>
+
+            <p>
+                Спасибо за выбор Atelier.<br>
+                Мы получили вашу заявку и скоро свяжемся с вами.
+            </p>
+        </div>
+
+    </section>
+
+    <footer class="footer">
+        ATELIER BEAUTY · PROFESSIONAL CARE
+    </footer>
+
+</div>
+
+<script>
+    // Инициализация Telegram Mini App
+    const tg = window.Telegram?.WebApp;
+
+    if (tg) {
+        tg.ready();
+        tg.expand();
+
+        if (tg.setHeaderColor) {
+            tg.setHeaderColor('#101014');
+        }
+
+        if (tg.setBackgroundColor) {
+            tg.setBackgroundColor('#101014');
+        }
+    }
+
+    // Список услуг
+    const services = [
+        {
+            id: 1,
+            name: "Женская стрижка",
+            description: "Стрижка, мытьё и укладка",
+            price: 1500
+        },
+        {
+            id: 2,
+            name: "Маникюр",
+            description: "Комплексный уход за ногтями",
+            price: 2000
+        },
+        {
+            id: 3,
+            name: "Окрашивание",
+            description: "Профессиональное окрашивание волос",
+            price: 4500
+        },
+        {
+            id: 4,
+            name: "Укладка",
+            description: "Создание стильного образа",
+            price: 1200
+        }
+    ];
+
+    // Доступное время
+    const availableTimes = [
+        "10:00",
+        "12:00",
+        "14:00",
+        "16:00",
+        "18:00"
+    ];
+
+    let selectedService = null;
+    let selectedTime = null;
+
+    const servicesScreen = document.getElementById("servicesScreen");
+    const bookingScreen = document.getElementById("bookingScreen");
+    const successScreen = document.getElementById("successScreen");
+
+    const bookingDate = document.getElementById("bookingDate");
+    const bookBtn = document.getElementById("bookBtn");
+
+    // Установка минимальной даты
+    const today = new Date();
+    const localToday = new Date(
+        today.getTime() - today.getTimezoneOffset() * 60000
+    ).toISOString().split("T")[0];
+
+    bookingDate.min = localToday;
+    bookingDate.value = localToday;
+
+    // Отображение карточек услуг
+    function renderServices() {
+        const container = document.getElementById("servicesList");
+
+        container.innerHTML = services.map(service => `
+            <article class="service-card">
+
+                <div class="service-info">
+                    <h3>${service.name}</h3>
+                    <p>${service.description}</p>
+                    <div class="price">
+                        ${service.price.toLocaleString("ru-RU")} ₽
+                    </div>
+                </div>
+
+                <button class="select-btn"
+                    onclick="selectService(${service.id})">
+                    Выбрать
+                </button>
+
+            </article>
+        `).join("");
+    }
+
+    // Выбор услуги
+    function selectService(id) {
+        selectedService = services.find(s => s.id === id);
+        selectedTime = null;
+
+        document.getElementById("selectedServiceName").textContent =
+            selectedService.name;
+
+        document.getElementById("selectedServicePrice").textContent =
+            selectedService.price.toLocaleString("ru-RU") + " ₽";
+
+        renderTimes();
+
+        bookBtn.disabled = true;
+
+        showScreen(bookingScreen);
+    }
+
+    // Отображение времени
+    function renderTimes() {
+        const container = document.getElementById("timeGrid");
+
+        container.innerHTML = availableTimes.map(time => `
+            <button
+                class="time-btn"
+                type="button"
+                onclick="selectTime('${time}')">
+                ${time}
+            </button>
+        `).join("");
+    }
+
+    // Выбор времени
+    function selectTime(time) {
+        selectedTime = time;
+
+        document.querySelectorAll(".time-btn").forEach(btn => {
+            btn.classList.toggle(
+                "selected",
+                btn.textContent.trim() === time
+            );
+        });
+
+        updateBookButton();
+    }
+
+    // Проверка заполнения формы
+    function updateBookButton() {
+        bookBtn.disabled = !(
+            selectedService &&
+            selectedTime &&
+            bookingDate.value
+        );
+    }
+
+    bookingDate.addEventListener("change", () => {
+        selectedTime = null;
+        renderTimes();
+        updateBookButton();
+    });
+
+    // Переход между экранами
+    function showScreen(screen) {
+        document.querySelectorAll(".screen").forEach(item => {
+            item.classList.remove("active");
+        });
+
+        screen.classList.add("active");
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+
+    // Возврат к услугам
+    function goBack() {
+        selectedService = null;
+        selectedTime = null;
+
+        showScreen(servicesScreen);
+    }
+
+    // Отправка заявки
+    function makeBooking() {
+        if (!selectedService || !selectedTime || !bookingDate.value) {
+            return;
+        }
+
+        const bookingData = {
+            service: selectedService.name,
+            price: selectedService.price,
+            time: selectedTime,
+            date: bookingDate.value
+        };
+
+        bookBtn.disabled = true;
+        bookBtn.textContent = "Отправка...";
+
+        try {
+            if (tg && tg.sendData) {
+                tg.sendData(JSON.stringify(bookingData));
+
+                showScreen(successScreen);
+
+                setTimeout(() => {
+                    tg.close();
+                }, 500);
+
+            } else {
+                // Режим предварительного просмотра вне Telegram
+                console.log("Тестовая заявка:", bookingData);
+
+                showScreen(successScreen);
+
+                bookBtn.textContent = "Записаться";
+            }
+
+        } catch (error) {
+            console.error("Ошибка отправки:", error);
+
+            bookBtn.disabled = false;
+            bookBtn.textContent = "Повторить отправку";
+
+            alert("Не удалось отправить заявку. Попробуйте ещё раз.");
+        }
+    }
+
+    // Первоначальная загрузка
+    renderServices();
+
+</script>
+
+</body>
+</html>
